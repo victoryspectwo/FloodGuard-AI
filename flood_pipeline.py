@@ -42,6 +42,7 @@ def get_forecast_data():
     url = "https://api-open.data.gov.sg/v2/real-time/api/two-hr-forecast"
     response = requests.get(url)
     data = response.json()
+    print(data)
     forecast_map = {
         "Thundery Showers": 2,
         "Showers": 1,
