@@ -1,0 +1,10 @@
+streamlit
+pandas
+numpy
+matplotlib  
+requests
+joblib
+datetime
+telethon
+scikit-learn
+xgboost
