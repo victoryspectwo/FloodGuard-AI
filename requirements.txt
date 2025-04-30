@@ -1,10 +1,11 @@
 streamlit
 pandas
 numpy
-matplotlib  
+matplotlib
 requests
 joblib
-datetime
+python-dateutil
 telethon
 scikit-learn
 xgboost
+feedparser
