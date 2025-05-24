@@ -12,11 +12,11 @@ rain_df_processed = prepare_training_data()
 print("🌧️ Rainfall Data Sample:")
 print(rain_df)
 
-#print("\n📡 Forecast Data Sample:")
-#print(forecast_df)
+print("\n📡 Forecast Data Sample:")
+print(forecast_df)
 
-print("\n🌧️ Processed Rainfall Data Sample:")
-print(rain_df_processed)
+#print("\n🌧️ Processed Rainfall Data Sample:")
+#print(rain_df_processed)
 
 #print("\n📡 Water Level Sensor Location Sample:")
 #print(sensor_locations.head())
