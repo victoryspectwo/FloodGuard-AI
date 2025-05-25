@@ -8,3 +8,4 @@ datetime
 telethon
 scikit-learn
 xgboost
+requirements.txt

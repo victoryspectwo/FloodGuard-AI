@@ -5,6 +5,7 @@ import sys
 import os
 import streamlit.components.v1 as components
 from datetime import datetime
+import subprocess
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -100,8 +101,18 @@ with tab1:
 
 with tab2:
     st.markdown("### 🧠 AI Summary from News + Telegram")
+    
+    if st.session_state.demo_mode_on:
+        st.caption("📡 Fetching latest alerts and generating summary...")
+        try:
+            import subprocess
+            subprocess.run(["python", "../webscraper.py"], check=True)
+            st.success("✅ Summary refreshed.")
+        except Exception as e:
+            st.warning(f"⚠️ Could not update summary: {e}")
+
     try:
-        with open("deepseek.txt", "r") as f:
+        with open("../llm/deepseek.txt", "r", encoding="utf-8") as f:
             summary = f.read()
         st.info(summary)
     except FileNotFoundError:

@@ -2,3 +2,6 @@ __pycache__/\
 *.pyc
 .env
 .venv
+
+llm/nea_session.session
+llm/deepseek.txt
