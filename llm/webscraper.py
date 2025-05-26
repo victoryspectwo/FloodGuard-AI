@@ -4,6 +4,8 @@ from telethon.tl.types import PeerChannel
 import re
 from datetime import datetime, timedelta
 import requests
+import pandas as pd
+import os
 
 keywords = [
     "flood", "flooding", "flash flood", "overflow", "rain", "heavy rain",
@@ -57,6 +59,13 @@ for news in news_channel:
 
 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+try:
+    prediction_df = pd.read_csv("../data/predicted_data.csv")  # Adjust path if needed
+    flood_df = prediction_df[prediction_df.get("flood_prediction", 0) == 1]
+except Exception as e:
+    print(f"❌ Could not load model predictions: {e}")
+    flood_df = pd.DataFrame()
+
 telegram_text = ""
 if msg_entries:
     telegram_text = "\n".join([
@@ -78,6 +87,17 @@ if news_entries:
 else:
     rss_text = "No weather-related news found in Singapore news channels."
 
+model_data_text = ""
+
+if not flood_df.empty:
+    model_data_text = "\n".join([
+        f"- {row['location']} reported {row['rainfall']:.1f} mm rainfall at approx {row['hour']:02d}:00 (day {row['dayofweek']})"
+        for _, row in flood_df.iterrows()
+    ])
+else:
+    model_data_text = "No flood-prone locations predicted by the AI model in the latest run."
+
+
 # 🧠 The prompt stays the same
 prompt = f"""You are a concise assistant supporting a bus operator in Singapore.
 
@@ -97,12 +117,18 @@ Separate each point that you make with bullet points for readability.
 📰 News Headlines (RSS Feeds):
 {rss_text}
 
+🤖 AI Model-Predicted Floods:
+{model_data_text}
+
 ---
 
 Your response must:
-- State if rain or flood is confirmed today and within the past 7 days
+- State if rain or flood is confirmed TODAY and within the past 7 days
 - Mention affected areas or dates if known
 - Advise whether buses should be rerouted
+- Keep all news sources to local Singaporean context
+- Dedicate one short paragraph explaining {model_data_text} as this is the 
+latest and current data. Ensure that you reference it in the context of {now}
 - Be short, informative, and no more than **3 bullet points**"""
 
 # Call LLM
