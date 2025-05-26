@@ -99,15 +99,16 @@ else:
 
 
 # 🧠 The prompt stays the same
-prompt = f"""You are a concise assistant supporting a bus operator in Singapore.
+prompt = f"""You are a concise assistant helping a Singaporean bus operator.
 
-It is currently {now}.
+Analyze the information below and output **no more than 3 bullet points**.
 
-Based strictly on the following weather alerts, identify whether any *heavy rain or flooding* occurred in the **past 7 days**.
-
-Do not speculate. Only summarize what is explicitly mentioned.
-
-Separate each point that you make with bullet points for readability.
+Each point must:
+- Mention confirmed flooding or heavy rain only if **explicitly stated**
+- Include affected areas or timing if available
+- Advise whether buses should reroute **based on certainty only**
+- Refer to the flood prediction model summary once
+- Stay local (Singapore-only), concise, and professional
 
 ---
 
@@ -117,19 +118,9 @@ Separate each point that you make with bullet points for readability.
 📰 News Headlines (RSS Feeds):
 {rss_text}
 
-🤖 AI Model-Predicted Floods:
+🤖 AI Model Summary:
 {model_data_text}
-
----
-
-Your response must:
-- State if rain or flood is confirmed TODAY and within the past 7 days
-- Mention affected areas or dates if known
-- Advise whether buses should be rerouted
-- Keep all news sources to local Singaporean context
-- Dedicate one short paragraph explaining {model_data_text} as this is the 
-latest and current data. Ensure that you reference it in the context of {now}
-- Be short, informative, and no more than **3 bullet points**"""
+"""
 
 # Call LLM
 url = "http://localhost:11434/api/generate"
