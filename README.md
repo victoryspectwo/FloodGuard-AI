@@ -19,6 +19,12 @@ data.gov.sg
 - Real time rainfall data API (to determine which areas are flooded)
 - 2h, 24h and 4 day weather forecast API (to get our basic prediction)
 
+datamall.lta.gov.sg/
+
+- Bus Routes
+- Bus Services
+- Bus Stops
+
 Additional sources
 
 - PUB Telegram Channel rainfall reports (Processed with Deepseek LLM through Natural Language Processing)
