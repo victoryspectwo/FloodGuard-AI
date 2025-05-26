@@ -8,7 +8,6 @@ datetime
 telethon
 scikit-learn
 xgboost
-requirements.txt
 feedparser
 folium
 streamlit-folium
