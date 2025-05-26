@@ -223,7 +223,7 @@ with tab2:
     if st.session_state.demo_mode_on:
         st.caption("📡 Fetching latest alerts and generating summary...")
         try:
-            subprocess.run(["python", "../llm/webscraper.py"], check=True, cwd="../llm")
+            subprocess.run([sys.executable, "webscraper.py"], check=True, cwd="../llm")
             st.success("✅ Summary refreshed.")
         except Exception as e:
             st.warning(f"⚠️ Could not update summary: {e}")
