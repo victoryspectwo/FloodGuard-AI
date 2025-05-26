@@ -28,6 +28,44 @@ model = joblib.load(os.path.join(os.path.dirname(__file__), '..', 'models', 'flo
 now = datetime.now()
 current_time = now.strftime("%H:%M:%S")
 
+
+# --- Telegram Alert Function ---
+def send_telegram_alert(affected_bus_data, flooded_ids, bus_stops_dict):
+    bot_token = "7584074211:AAFhJiQhp72hpxGp3QV3Aqo-eOKAAyc6v8M"
+    chat_ids = ["1201658699", "5178625508"]
+
+    alert_lines = []
+    for bus_number, data in affected_bus_data.items():
+        flooded_stops = [sid for sid in data["stops"] if sid in flooded_ids]
+        if flooded_stops:
+            stop_names = [bus_stops_dict[sid]["name"] for sid in flooded_stops if sid in bus_stops_dict]
+            alert_lines.append(f"• *Bus {bus_number}* — {', '.join(stop_names)}")
+
+    if not alert_lines:
+        st.info("✅ No flooded stops to alert.")
+        return
+
+    message = (
+        "*🚨 URGENT FLOOD ALERT:*\n\n"
+        "The following bus services are currently affected by possible flooding at nearby stops:\n\n"
+        f"{chr(10).join(alert_lines)}\n\n"
+        "⚠️ Please *inform all relevant bus drivers immediately* and monitor traffic along these routes. "
+        "Drivers are advised to approach with caution or take alternate paths if necessary.\n\n"
+        "— FloodGuard AI"
+    )
+
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    for chat_id in chat_ids:
+        payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
+        r = requests.post(url, data=payload)
+
+        if r.status_code == 200:
+            st.success(f"✅ Alert successfully sent to bus operators")
+        else:
+            st.error(f"❌ Failed to send alert to {chat_id}: {r.text}")
+
+
+
 # --- Live data pipeline ---
 def get_live_data():
     rain_df = fetch_rainfall_df()
@@ -159,10 +197,10 @@ with tab1:
         st.session_state.df = None
 
     st.markdown("### 📍 Rainfall Stations near/at Roads")
-    st.caption(f"🔁 Auto-refreshes every 30 seconds — Last updated at {current_time}")
+    st.caption(f"🔁 Auto-refreshes every 60 seconds — Last updated at {current_time}")
 
-    # 🔁 Auto-refresh every 30 seconds
-    count = st_autorefresh(interval=30 * 1000, key="auto_refresh")
+    # 🔁 Auto-refresh every 60 seconds
+    count = st_autorefresh(interval=60 * 1000, key="auto_refresh")
 
     # Always show rainfall map first
     try:
@@ -214,9 +252,6 @@ with tab1:
 
         st.subheader("📋 All Station Data")
         st.dataframe(df[['location', 'rainfall', 'forecast', 'flood_prediction']])
-
-
-
 
 with tab2:
     st.markdown("### 🧠 AI Summary from News + Telegram")
@@ -287,4 +322,5 @@ with tab3:
 
     folium.LayerControl(collapsed=False).add_to(m)
     st_data = st_folium(m, use_container_width=True, height=700, returned_objects=[])
-
+    if affected_bus_data and flooded_ids:
+        send_telegram_alert(affected_bus_data, flooded_ids, bus_stops_dict)
