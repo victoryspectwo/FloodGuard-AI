@@ -48,22 +48,34 @@ def predict_flood(df):
     return df
 
 # --- Rerouting logic ---
-@st.cache_data
 def load_reroute_data():
     base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
-    flood_csv_path = os.path.join(base_path, "2025-05-25T10-10_export.csv")
+    
+    # ✅ Select appropriate file and label based on mode
+    if st.session_state.get("demo_mode_on", False):
+        data_file = os.path.join(base_path, "historical_data.csv")
+        label_column = "flood_label"
+    else:
+        data_file = os.path.join(base_path, "predicted_data.csv")
+        label_column = "flood_prediction"
+
     bus_stops_file = os.path.join(base_path, "bus-stops.json")
     bus_services_dir = os.path.join(base_path, "bus-services")
 
-    flood_df = pd.read_csv(flood_csv_path)
-    flood_df = flood_df[flood_df['flood_prediction'] == 1]
+    flood_df = pd.read_csv(data_file)
+    flood_df = flood_df[flood_df[label_column] == 1]
 
     # Fetch station coordinates from API
     api_url = "https://api.data.gov.sg/v1/environment/rainfall"
     try:
         response = requests.get(api_url)
         stations_data = response.json().get("metadata", {}).get("stations", [])
-        station_coords = {station["name"]: (station["location"]["latitude"], station["location"]["longitude"]) for station in stations_data}
+        station_coords = {
+            station["name"]: (
+                station["location"]["latitude"],
+                station["location"]["longitude"]
+            ) for station in stations_data
+        }
     except Exception:
         station_coords = {}
 
@@ -140,19 +152,19 @@ with tab1:
     if simulate:
         st.session_state.demo_mode_on = True
         st.info("🕓 Demo mode ON — loading historical_data.csv...")
-        df = pd.read_csv("../historical_data.csv")
+        df = pd.read_csv("../data/historical_data.csv")
         st.session_state.df = df
     else:
         st.session_state.demo_mode_on = False
         st.session_state.df = None
 
     st.markdown("### 📍 Rainfall Stations near/at Roads")
-    st.caption(f"🔁 Auto-refreshes every 60 seconds — Last updated at {current_time}")
+    st.caption(f"🔁 Auto-refreshes every 30 seconds — Last updated at {current_time}")
 
-    # 🔁 Auto-refresh every 60 seconds
-    count = st_autorefresh(interval=60 * 1000, key="auto_refresh")
+    # 🔁 Auto-refresh every 30 seconds
+    count = st_autorefresh(interval=30 * 1000, key="auto_refresh")
 
-# Always show rainfall map first
+    # Always show rainfall map first
     try:
         raw_df = get_live_data()
         rain_map = folium.Map(location=[1.3521, 103.8198], zoom_start=11)
@@ -175,7 +187,13 @@ with tab1:
 
         df = predict_flood(df)
         st.session_state.df = df
-        st.session_state.flood_df = df[df['flood_prediction'] == 1]
+        df.to_csv("../data/predicted_data.csv", index=False)  # ✅ Save predictions
+
+        # ✅ Use correct column depending on mode
+        if st.session_state.demo_mode_on:
+            st.session_state.flood_df = df[df['flood_label'] == 1]
+        else:
+            st.session_state.flood_df = df[df['flood_prediction'] == 1]
 
         if st.session_state.flood_df.empty:
             st.success(f"✅ No flood risk predicted as of {current_time}, {now.date()}")
@@ -205,7 +223,7 @@ with tab2:
     if st.session_state.demo_mode_on:
         st.caption("📡 Fetching latest alerts and generating summary...")
         try:
-            subprocess.run(["python", "../llm/webscraper.py"], check=True)
+            subprocess.run(["python", "../llm/webscraper.py"], check=True, cwd="../llm")
             st.success("✅ Summary refreshed.")
         except Exception as e:
             st.warning(f"⚠️ Could not update summary: {e}")
