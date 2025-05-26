@@ -59,12 +59,10 @@ def send_telegram_alert(affected_bus_data, flooded_ids, bus_stops_dict):
         payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
         r = requests.post(url, data=payload)
 
-        if r.status_code == 200:
-            st.success(f"✅ Alert successfully sent to bus operators")
-        else:
-            st.error(f"❌ Failed to send alert to {chat_id}: {r.text}")
-
-
+    if r.status_code == 200:
+        st.success(f"✅ Alert successfully sent to bus operators")
+    else:
+        st.error(f"❌ Failed to send alert to {chat_id}: {r.text}")
 
 # --- Live data pipeline ---
 def get_live_data():
