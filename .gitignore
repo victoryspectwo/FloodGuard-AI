@@ -5,3 +5,5 @@ __pycache__/\
 
 llm/nea_session.session
 llm/deepseek.txt
+dashboard/nea_session.session
+nea_session.session
