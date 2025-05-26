@@ -9,3 +9,8 @@ telethon
 scikit-learn
 xgboost
 requirements.txt
+feedparser
+folium
+streamlit-folium
+geopy
+streamlit-autorefresh

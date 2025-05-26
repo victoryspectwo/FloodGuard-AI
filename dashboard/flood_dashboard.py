@@ -11,7 +11,9 @@ import requests
 import folium
 from geopy.distance import geodesic
 from folium.plugins import Fullscreen
-from streamlit_folium import st_folium
+from streamlit_folium import folium_static, st_folium
+from streamlit_autorefresh import st_autorefresh
+
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -145,37 +147,65 @@ with tab1:
         st.session_state.df = None
 
     st.markdown("### 📍 Rainfall Stations near/at Roads")
-    try:
-        display_df = get_live_data()
-        st.map(display_df[['latitude', 'longitude']], zoom=10)
-    except Exception as e:
-        st.warning(f"⚠️ Unable to load rainfall map. {str(e)}")
+    st.caption(f"🔁 Auto-refreshes every 60 seconds — Last updated at {current_time}")
 
-    if st.button("🔄 Run Flood Prediction", key="predict_btn"):
-        with st.spinner("Predicting flood risk..."):
-            if not st.session_state.demo_mode_on:
-                df = get_live_data()
-            df = predict_flood(df)
-            st.session_state.df = df
-            st.session_state.flood_df = df[df['flood_prediction'] == 1]
+    # 🔁 Auto-refresh every 60 seconds
+count = st_autorefresh(interval=60 * 1000, key="auto_refresh")
 
-            if st.session_state.flood_df.empty:
-                st.success(f"✅ No flood risk predicted as of {current_time}, {now.date()}")
-            else:
-                st.error(f"🚨 Flood risk at {len(st.session_state.flood_df)} location(s)!")
-                st.dataframe(st.session_state.flood_df[['location', 'rainfall', 'forecast', 'latitude', 'longitude']])
-                st.markdown("### 📍 Rainfall Stations recording flooded areas")
-                st.map(st.session_state.flood_df[['latitude', 'longitude']])
+# Always show rainfall map first
+try:
+    raw_df = get_live_data()
+    rain_map = folium.Map(location=[1.3521, 103.8198], zoom_start=11)
+    for _, row in raw_df.iterrows():
+        folium.Marker(
+            [row['latitude'], row['longitude']],
+            popup=f"{row['location']}<br>Rainfall: {row['rainfall']:.2f} mm",
+            icon=folium.Icon(color="blue", icon="cloud")
+        ).add_to(rain_map)
+    folium_static(rain_map, width=1600, height=600)
+except Exception as e:
+    st.warning(f"⚠️ Could not load rainfall station map: {e}")
 
-            st.subheader("📋 All Station Data")
-            st.dataframe(df[['location', 'rainfall', 'forecast', 'flood_prediction']])
+# Run flood prediction logic every refresh
+with st.spinner("Auto-refreshing flood prediction..."):
+    if not st.session_state.demo_mode_on:
+        df = get_live_data()
+    else:
+        df = st.session_state.df
+
+    df = predict_flood(df)
+    st.session_state.df = df
+    st.session_state.flood_df = df[df['flood_prediction'] == 1]
+
+    if st.session_state.flood_df.empty:
+        st.success(f"✅ No flood risk predicted as of {current_time}, {now.date()}")
+    else:
+        st.error(f"🚨 Flood risk at {len(st.session_state.flood_df)} location(s)!")
+        st.dataframe(st.session_state.flood_df[['location', 'rainfall', 'forecast', 'latitude', 'longitude']])
+        st.markdown("### 📍 Rainfall Stations recording flooded areas")
+
+        # Only show flood-specific markers if flood detected
+        flood_map = folium.Map(location=[1.3521, 103.8198], zoom_start=11)
+        for _, row in st.session_state.flood_df.iterrows():
+            folium.Marker(
+                [row['latitude'], row['longitude']],
+                popup=f"{row['location']}<br>Rainfall: {row['rainfall']:.2f} mm",
+                icon=folium.Icon(color="red", icon="exclamation-sign")
+            ).add_to(flood_map)
+        folium_static(flood_map, width=1600, height=600)
+
+    st.subheader("📋 All Station Data")
+    st.dataframe(df[['location', 'rainfall', 'forecast', 'flood_prediction']])
+
+
+
 
 with tab2:
     st.markdown("### 🧠 AI Summary from News + Telegram")
     if st.session_state.demo_mode_on:
         st.caption("📡 Fetching latest alerts and generating summary...")
         try:
-            subprocess.run(["python", "../webscraper.py"], check=True)
+            subprocess.run(["python", "../llm/webscraper.py"], check=True)
             st.success("✅ Summary refreshed.")
         except Exception as e:
             st.warning(f"⚠️ Could not update summary: {e}")
